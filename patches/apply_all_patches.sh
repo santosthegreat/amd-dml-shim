@@ -14,14 +14,11 @@ sed -i 's/self\.args\.average_tokens_across_devices/getattr(self.args, "average_
 sed -i 's/self\.args\.torch_empty_cache_steps is not None/getattr(self.args, "torch_empty_cache_steps", None) is not None/g' $TRANS/trainer.py
 sed -i 's/self\.args\.torch_empty_cache_steps/getattr(self.args, "torch_empty_cache_steps", None)/g' $TRANS/trainer.py
 sed -i 's/if self.args.optim in \[OptimizerNames.LOMO, OptimizerNames.ADALOMO\]/if False/' $TRANS/trainer.py
-python3 - << 'PYEOF'
-import os, transformers
-f = os.path.dirname(transformers.__file__) + '/training_args.py'
-c = open(f).read()
-old = '                device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")\n                # Sometimes the line in the postinit has not been run before we end up here, so just checking we\'re not at\n                # the default value.\n                self._n_gpu = torch.cuda.device_count()\n                if device.type == "cuda":\n                    torch.cuda.set_device(device)'
-new = '                device = torch.device("cpu")\n                self._n_gpu = 0'
-if old in c:
-    open(f,'w').write(c.replace(old,new))
-    print("training_args.py patched OK")
-PYEOF
+sed -i 's/rng_states\["cuda"\] = torch.cuda.random.get_rng_state()/rng_states["cuda"] = []  # patched for DML/' $TRANS/trainer.py
+sed -i 's/rng_states\["cuda"\] = torch.cuda.random.get_rng_state_all()/rng_states["cuda"] = []  # patched for DML/' $TRANS/trainer.py
+sed -i 's/torch.cuda.random.set_rng_state(rng_states\["cuda"\])/pass  # patched for DML/' $TRANS/trainer.py
+sed -i 's/torch.cuda.random.set_rng_state_all(rng_states\["cuda"\])/pass  # patched for DML/' $TRANS/trainer.py
+sed -i 's/args\.include_for_metrics/getattr(args, "include_for_metrics", getattr(args, "include_inputs_for_metrics", []) or [])/g' $TRANS/trainer.py
+sed -i 's/adapters_weights = safe_load_file(filename, device=device)/adapters_weights = safe_load_file(filename, device="cpu")/' ~/.local/lib/python3.10/site-packages/peft/utils/save_and_load.py 2>/dev/null || true
+sed -i 's/result\[k\] = f.get_tensor(k)/result[k] = f.get_tensor(k).to("cpu")/' ~/.local/lib/python3.10/site-packages/safetensors/torch.py 2>/dev/null || true
 echo "Done."
