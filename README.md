@@ -39,10 +39,6 @@ Verify it works:
 
 Should print True and your AMD card name.
 
-## The Pi Observer
-
-While Windows trains, a Raspberry Pi 5 with Hailo-8 loads checkpoints and runs inference letting you chat with the model in real time as it learns. Connected via direct ethernet at sub-1ms latency. Each piece of hardware does what it was built for.
-
 ## Status
 
 - GPU detected via DirectML
